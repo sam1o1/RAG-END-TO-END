@@ -1,2 +1,6 @@
 .venv/
 env
+.env
+.env.example
+.gitignore
+.gitignore
