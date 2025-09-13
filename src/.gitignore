@@ -1,0 +1,30 @@
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Compiled files
+*__pycache__/
+src/routers/__pycache__
+src/models/enums
+*.pyc
+*.pyo
+
+# IDE specific files
+.idea/
+.vscode/
+*.sublime-workspace
+*.iml
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Sensitive files
+.env
+
+# Logs and temporary files
+*.log
+*.tmp

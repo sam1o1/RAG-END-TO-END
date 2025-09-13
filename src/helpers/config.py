@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ALLOWED_FILE_TYPES: List[str]
     ALLOWED_MAX_FILE_SIZE: int
+    FILE_DEFAULT_CHUNK_SIZE: int
 
     class Config:
         # Get the project root directory (parent of src)
