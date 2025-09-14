@@ -1,6 +1,39 @@
+# Virtual environment
+venv/
+env/
 .venv/
-env
+
+# Compiled files
+**/__pycache__/
+*__pycache__/
+*.pyc
+*.pyo
+assets/files
+# IDE specific files
+.idea/
+.vscode/
+*.sublime-workspace
+*.iml
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Sensitive files
 .env
-.env.example
-.gitignore
-.gitignore
+
+# Logs and temporary files
+*.log
+*.tmp
+src/routers/__pycache__/__init__.cpython-312.pyc
+src/__pycache__/main.cpython-312.pyc
+src/__pycache__/main.cpython-312.pyc
+src/routers/__pycache__/data.cpython-312.pyc
+src/routers/__pycache__/data.cpython-312.pyc
+src/routers/__pycache__/data.cpython-312.pyc
+*src/routers/__pycache__/
+src/routers/__pycache__/__init__.cpython-312.pyc
+src/routers/__pycache__/__init__.cpython-312.pyc
+src/routers/__pycache__/__init__.cpython-312.pyc
