@@ -1,4 +1,5 @@
 from enum import Enum
+from http.client import PROCESSING
 
 
 class ResponseSignal(Enum):
@@ -7,3 +8,5 @@ class ResponseSignal(Enum):
     FILE_VALID = "File is valid."
     UPLOAD_SUCCESS = "File uploaded successfully."
     UPLOAD_FAILURE = "File upload failed."
+    PROCESSING_FAILURE = "File processing failed."
+    PROCESSING_SUCCESS = "File processed successfully."
