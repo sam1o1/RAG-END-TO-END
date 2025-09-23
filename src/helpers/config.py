@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     ALLOWED_FILE_TYPES: List[str]
     ALLOWED_MAX_FILE_SIZE: int
     FILE_DEFAULT_CHUNK_SIZE: int
+    MONGO_URI: str
+    MONGO_DB_NAME: str
 
     class Config:
         # Get the project root directory (parent of src)
