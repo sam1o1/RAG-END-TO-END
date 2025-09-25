@@ -10,7 +10,9 @@ import aiofiles
 import logging
 from .schemas.data import ProcessRequest
 from models.db_schemas.data_chunk import DataChunk
+from models.db_schemas.asset import Asset
 from models.PorjectDataModel import ProjectDataModel
+from models.AssetsDataModel import AssetsDataModel
 from models.ChunkDataModel import ChunkDataModel
 
 logging.getLogger("uvicorn.error")
@@ -27,7 +29,9 @@ async def upload_file(
     file: UploadFile,
     app_settings: Settings = Depends(get_settings),
 ):
-    project_model = await ProjectDataModel.create_instance(db_client=request.app.mongo_conn)
+    project_model = await ProjectDataModel.create_instance(
+        db_client=request.app.mongo_conn
+    )
     project = await project_model.get_project_or_create_one(project_id=project_id)
     data_conroller = DataController()
     is_valid, signal = data_conroller.validate_uploaded_file(file)
@@ -56,6 +60,17 @@ async def upload_file(
                 "message": ResponseSignal.UPLOAD_FAILURE.value,
             },
         )
+    asset_model = await AssetsDataModel.create_instance(
+        db_client=request.app.mongo_conn
+    )
+    asset_resource = Asset(
+        asset_project_id=str(project.id),
+        asset_type=file.content_type,
+        asset_name=file_id,
+        asset_size=os.path.getsize(file_path),
+    )
+
+    asset = await asset_model.create_asset(asset=asset_resource)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -65,7 +80,7 @@ async def upload_file(
             "file_name": file.filename,
             "file_type": file.content_type,
             "file_size": file.size * data_conroller.size_scale,
-            "file_id": file_id,
+            "file_id": str(asset.id),
         },
     )
 
@@ -81,7 +96,9 @@ async def process_file(
     chunk_model = await ChunkDataModel.create_instance(db_client=request.app.mongo_conn)
     process_controller = ProcessController(project_id=project_id)
     file_content = process_controller.get_file_content(file_id=file_id)
-    project_model = await ProjectDataModel.create_instance(db_client=request.app.mongo_conn)
+    project_model = await ProjectDataModel.create_instance(
+        db_client=request.app.mongo_conn
+    )
     project = await project_model.get_project_or_create_one(project_id=project_id)
 
     file_chunks = process_controller.process_file_content(
