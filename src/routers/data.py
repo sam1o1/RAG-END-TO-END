@@ -27,7 +27,7 @@ async def upload_file(
     file: UploadFile,
     app_settings: Settings = Depends(get_settings),
 ):
-    project_model = ProjectDataModel(db_client=request.app.mongo_conn)
+    project_model = await ProjectDataModel.create_instance(db_client=request.app.mongo_conn)
     project = await project_model.get_project_or_create_one(project_id=project_id)
     data_conroller = DataController()
     is_valid, signal = data_conroller.validate_uploaded_file(file)
@@ -78,10 +78,10 @@ async def process_file(
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
     do_reset = process_request.do_reset
-    chunk_model = ChunkDataModel(db_client=request.app.mongo_conn)
+    chunk_model = await ChunkDataModel.create_instance(db_client=request.app.mongo_conn)
     process_controller = ProcessController(project_id=project_id)
     file_content = process_controller.get_file_content(file_id=file_id)
-    project_model = ProjectDataModel(db_client=request.app.mongo_conn)
+    project_model = await ProjectDataModel.create_instance(db_client=request.app.mongo_conn)
     project = await project_model.get_project_or_create_one(project_id=project_id)
 
     file_chunks = process_controller.process_file_content(
