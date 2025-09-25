@@ -5,18 +5,15 @@ from helpers.config import get_settings
 
 app = FastAPI()
 
-app.on_event("startup")
 
-
+@app.on_event("startup")
 async def startup_event():
     settings = get_settings()
     app.mongo_conn = AsyncIOMotorClient(settings.MONGO_URI)
-    app.mongo_db = app.mongo_connt[settings.MONGO_DB_NAME]
+    app.mongo_db = app.mongo_conn[settings.MONGO_DB_NAME]
 
 
-app.on_event("shutdown")
-
-
+@app.on_event("shutdown")
 async def shutdown_event():
     app.mongo_conn.close()
 

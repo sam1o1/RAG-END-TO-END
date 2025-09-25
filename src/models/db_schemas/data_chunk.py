@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 
 
 class DataChunk(BaseModel):
-    _id: Optional[ObjectId]
+    id: Optional[ObjectId] = Field(None, alias="_id")
     chunk_text: str = Field(
         ..., description="Text content of the data chunk", min_length=1
     )

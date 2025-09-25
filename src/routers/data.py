@@ -1,7 +1,7 @@
 import os
 import re
 from urllib import response
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
+from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
 from fastapi.responses import JSONResponse
 from helpers.config import get_settings, Settings
 from controllers import DataController, ProjectController, ProcessController
@@ -9,6 +9,9 @@ from models import ResponseSignal
 import aiofiles
 import logging
 from .schemas.data import ProcessRequest
+from models.db_schemas.data_chunk import DataChunk
+from models.PorjectDataModel import ProjectDataModel
+from models.ChunkDataModel import ChunkDataModel
 
 logging.getLogger("uvicorn.error")
 data_router = APIRouter(
@@ -19,8 +22,13 @@ data_router = APIRouter(
 
 @data_router.post("/upload/{project_id}")
 async def upload_file(
-    project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)
+    request: Request,
+    project_id: str,
+    file: UploadFile,
+    app_settings: Settings = Depends(get_settings),
 ):
+    project_model = ProjectDataModel(db_client=request.app.mongo_conn)
+    project = await project_model.get_project_or_create_one(project_id=project_id)
     data_conroller = DataController()
     is_valid, signal = data_conroller.validate_uploaded_file(file)
     if not is_valid:
@@ -63,12 +71,19 @@ async def upload_file(
 
 
 @data_router.post("/process/{project_id}")
-async def process_file(project_id: str, process_request: ProcessRequest):
+async def process_file(
+    request: Request, project_id: str, process_request: ProcessRequest
+):
     file_id = process_request.file_id
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
+    do_reset = process_request.do_reset
+    chunk_model = ChunkDataModel(db_client=request.app.mongo_conn)
     process_controller = ProcessController(project_id=project_id)
     file_content = process_controller.get_file_content(file_id=file_id)
+    project_model = ProjectDataModel(db_client=request.app.mongo_conn)
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
     file_chunks = process_controller.process_file_content(
         file_content=file_content,
         file_id=file_id,
@@ -83,4 +98,25 @@ async def process_file(project_id: str, process_request: ProcessRequest):
                 "message": ResponseSignal.PROCESSING_FAILURE.value,
             },
         )
-    return file_chunks
+    file_chunks_records = [
+        DataChunk(
+            chunk_text=chunk.page_content,
+            chunk_metadata=chunk.metadata,
+            chunk_order=i + 1,
+            chunk_project_id=project.id,
+        )
+        for i, chunk in enumerate(file_chunks)
+    ]
+    if do_reset == 1:
+        _ = await chunk_model.delete_chunks_by_project_id(project.id)
+    inserted_count = await chunk_model.insert_many_chunks(chunks=file_chunks_records)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "status": status.HTTP_200_OK,
+            "message": ResponseSignal.PROCESSING_SUCCESS.value,
+            "file_id": file_id,
+            "total_chunks": inserted_count,
+        },
+    )
