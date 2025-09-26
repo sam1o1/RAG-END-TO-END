@@ -24,6 +24,20 @@ mini_rag_eslam/
 └─ README.md
 ```
 
+## Directory Guides
+- [docker](docker/README.md) — Compose stack and volume layout.
+- [docker/mongodb](docker/mongodb/README.md) — MongoDB volume guidance.
+- [src](src/README.md) — Application entry point and module map.
+- [src/assets](src/assets/README.md) — Uploaded document storage.
+- [src/assets/files](src/assets/files/README.md) — Project-specific file directories.
+- [src/controllers](src/controllers/README.md) — Orchestration logic for uploads and processing.
+- [src/helpers](src/helpers/README.md) — Shared utilities and configuration.
+- [src/models](src/models/README.md) — Data access layer and persistence types.
+- [src/models/db_schemas](src/models/db_schemas/README.md) — Pydantic schemas and index definitions.
+- [src/models/enums](src/models/enums/README.md) — Enumerations referenced across modules.
+- [src/routers](src/routers/README.md) — FastAPI endpoint registrations.
+- [src/routers/schemas](src/routers/schemas/README.md) — Request payload definitions.
+
 ## Prerequisites
 - Python 3.10 or later
 - MongoDB 7.x (local instance or Docker container)
@@ -139,3 +153,6 @@ Uploaded files live on disk under `src/assets/files/{project_id}`. Ensure the ap
 
 ## License
 This project is distributed under the terms of the [MIT License](LICENSE).
+
+
+
