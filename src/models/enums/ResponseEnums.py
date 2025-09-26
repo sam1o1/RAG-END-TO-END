@@ -10,3 +10,4 @@ class ResponseSignal(Enum):
     UPLOAD_FAILURE = "File upload failed."
     PROCESSING_FAILURE = "File processing failed."
     PROCESSING_SUCCESS = "File processed successfully."
+    FILES_NOT_FOUND = "No files found."

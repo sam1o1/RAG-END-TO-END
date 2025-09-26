@@ -1,10 +1,11 @@
+from tkinter import N
 from turtle import reset
 from pydantic import BaseModel
 from typing import Optional
 
 
 class ProcessRequest(BaseModel):
-    file_id: str
+    file_id: str = None
     chunk_size: Optional[int] = 100
     overlap_size: Optional[int] = 20
     do_reset: Optional[int] = 0
