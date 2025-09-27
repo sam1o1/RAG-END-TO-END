@@ -1,13 +1,13 @@
-# Mini RAG Service
+﻿# Mini RAG Service
 
-Mini RAG is a FastAPI-based microservice that ingests plain text and PDF documents, stores their metadata in MongoDB, and prepares retrieval-ready chunks using LangChain utilities. It is designed as a lightweight foundation for retrieval-augmented generation (RAG) workflows.
+Mini RAG is a FastAPI-based microservice that ingests plain text and PDF documents, stores their metadata in MongoDB, and prepares retrieval-ready chunks with LangChain utilities. It now also wires pluggable LLM providers so generation and embedding calls can be delegated to Azure OpenAI or Cohere with a shared interface.
 
 ## Features
 - File upload endpoint with size and MIME type validation.
 - Persistent project and asset tracking in MongoDB collections.
 - Text extraction for `.txt` and `.pdf` files using LangChain loaders.
 - Configurable recursive chunking with overlap control for downstream RAG pipelines.
-- Async I/O throughout the data path for efficient large-file handling.
+- Pluggable LLM connectors (Azure OpenAI or Cohere) for generation and embedding workloads.
 
 ## Project Structure
 ```
@@ -19,6 +19,7 @@ mini_rag_eslam/
 │  ├─ helpers/config.py   # Pydantic-based settings loader
 │  ├─ models/             # MongoDB data access layer and schemas
 │  ├─ routers/            # FastAPI routers for health and data endpoints
+│  ├─ stores/llm/         # Provider factory and clients for LLM generation/embeddings
 │  └─ main.py             # FastAPI application entry point
 ├─ .env.example           # Environment variable template
 └─ README.md
@@ -37,12 +38,15 @@ mini_rag_eslam/
 - [src/models/enums](src/models/enums/README.md) — Enumerations referenced across modules.
 - [src/routers](src/routers/README.md) — FastAPI endpoint registrations.
 - [src/routers/schemas](src/routers/schemas/README.md) — Request payload definitions.
+- [src/stores](src/stores/README.md) — LLM clients and provider plumbing.
+- [src/stores/llm](src/stores/llm/README.md) — Factory, enums, and provider contracts.
 
 ## Prerequisites
-- Python 3.10 or later
-- MongoDB 7.x (local instance or Docker container)
-- `pip` for dependency management
-- Optional: Docker Desktop for running MongoDB via `docker-compose`
+- Python 3.10 or later.
+- MongoDB 7.x (local instance or Docker container).
+- `pip` for dependency management.
+- Optional: Docker Desktop for running MongoDB via `docker-compose`.
+- Optional: Azure OpenAI and/or Cohere credentials when exercising LLM-backed features.
 
 ## Setup
 1. **Clone and create a virtual environment**
@@ -63,11 +67,22 @@ mini_rag_eslam/
    ```bash
    cp .env.example .env
    ```
-   Update `.env` with values that match your environment:
-   - `APP_NAME`, `APP_VERSION`, `DEBUG`
-   - `ALLOWED_FILE_TYPES`, `ALLOWED_MAX_FILE_SIZE`, `FILE_DEFAULT_CHUNK_SIZE`
-   - `MONGO_URI`, `MONGO_DB_NAME`
-   - `MONGO_INITDB_ROOT_USERNAME`, `MONGO_INITDB_ROOT_PASSWORD` (required when using the bundled MongoDB container)
+   Update `.env` with values that match your environment.
+
+### Environment Variables
+#### Core service
+- `APP_NAME`, `APP_VERSION`, `DEBUG`
+- `ALLOWED_FILE_TYPES`, `ALLOWED_MAX_FILE_SIZE`, `FILE_DEFAULT_CHUNK_SIZE`
+
+#### MongoDB
+- `MONGO_URI`, `MONGO_DB_NAME`
+- `MONGO_INITDB_ROOT_USERNAME`, `MONGO_INITDB_ROOT_PASSWORD` (required when using the provided MongoDB compose stack)
+
+#### LLM providers (optional)
+- `GENERATION_BACKEND`, `EMBEDDING_BACKEND` — set to `OPENAI` (Azure OpenAI) or `COHERE` for the respective factory outputs. The sample `.env` ships with placeholder strings; update them to the enum values before running.
+- Azure OpenAI: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_DEPLOYMENT_GPT4O`, `AZURE_OPENAI_DEPLOYMENT_GPT4O_MINI`, `AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS`.
+- Cohere: `CHHERE_API_KEY` (note the current spelling in `Settings`).
+- Shared defaults: `GENERATION_MOELL_ID`, `EMBEDDING_MODEL_ID`, `EMBEDDING_MODEL_SIZE`, `INPUT_DEFAULT_MAX_CHARS`, `GENERATION_DEFAULT_MAX_TOKENS`, `GENERATION_DEFAULT_TEMPERATURE`.
 
 ## Running MongoDB with Docker (optional)
 ```bash
@@ -83,7 +98,7 @@ From the project root:
 export PYTHONPATH=src   # PowerShell: $env:PYTHONPATH = "src"
 uvicorn main:app --app-dir src --reload --host 0.0.0.0 --port 8000
 ```
-The API will be available at `http://localhost:8000`. Interactive documentation is exposed at `/docs` (Swagger UI) and `/redoc`.
+The API is served at `http://localhost:8000`. Interactive documentation is exposed at `/docs` (Swagger UI) and `/redoc`.
 
 ## API Overview
 
@@ -133,6 +148,12 @@ The API will be available at `http://localhost:8000`. Interactive documentation 
            }'
   ```
 
+## LLM Provider Configuration
+- The FastAPI startup hook instantiates `app.generation_client` and `app.embedding_client` via `LLMProviderFactory`.
+- Use `GENERATION_BACKEND`/`EMBEDDING_BACKEND` to choose the provider (`OPENAI` for Azure OpenAI, `COHERE` for Cohere).
+- Set model identifiers (`GENERATION_MOELL_ID`, `EMBEDDING_MODEL_ID`) and optional defaults for token limits or temperature.
+- Provider clients expose `generate_text()` and `embed_text()` and can be injected into future endpoints for downstream RAG flows.
+
 ## Data Model
 - **Projects (`projects` collection):** tracks unique project identifiers.
 - **Assets (`assets` collection):** metadata describing uploaded files.
@@ -145,14 +166,13 @@ Uploaded files live on disk under `src/assets/files/{project_id}`. Ensure the ap
 - Async Motor client connections are created and terminated through FastAPI startup/shutdown events.
 - Supported content types are controlled through `ALLOWED_FILE_TYPES`; adjust to add loaders for additional formats.
 - Chunking defaults (`chunk_size`, `overlap_size`) can be tuned per request without restarting the service.
+- LLM providers share a lightweight interface so new providers can be registered in `src/stores/llm/providers/`.
 
 ## Troubleshooting
 - **Validation errors during upload:** verify MIME type and file size, and confirm `ALLOWED_FILE_TYPES`/`ALLOWED_MAX_FILE_SIZE` values.
 - **MongoDB connection errors:** double-check `MONGO_URI`, credentials, and that MongoDB is running.
+- **LLM client is `None`:** confirm `GENERATION_BACKEND`/`EMBEDDING_BACKEND` match the expected enum values and that required API keys are present.
 - **Import errors when starting Uvicorn:** ensure `PYTHONPATH` includes `src` or launch with `uvicorn main:app --app-dir src` as shown above.
 
 ## License
 This project is distributed under the terms of the [MIT License](LICENSE).
-
-
-

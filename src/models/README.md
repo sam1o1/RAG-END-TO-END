@@ -1,12 +1,12 @@
-# Data Models
+﻿# Data Models
 
 The `models/` package implements persistence concerns for Mini RAG using Motor (async PyMongo) and Pydantic schemas.
 
 ## Components
 - `BaseDataModel.py` — Base class that wires application settings and MongoDB clients.
-- `PorjectDataModel.py` — Handles project lifecycle operations (create, list, fetch or create).
+- `PorjectDataModel.py` (`ProjectDataModel`) — Handles project lifecycle operations (create, list, or fetch on demand).
 - `AssetsDataModel.py` — Persists metadata about uploaded files and retrieves project assets.
-- `ChunkDataModel.py` — Stores text chunks resulting from document processing.
+- `ChunkDataModel.py` — Stores text chunks resulting from document processing and supports bulk inserts/resets.
 - `db_schemas/` — Pydantic models mirroring MongoDB documents and index definitions.
 - `enums/` — Enumerations for collection names, file extensions, and response signals.
 
