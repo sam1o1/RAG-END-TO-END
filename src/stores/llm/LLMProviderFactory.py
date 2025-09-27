@@ -1,0 +1,29 @@
+import re
+from .LLMEnums import LLMEnum
+from .providers import AzureOpenAIProvider, CohereProvider
+
+
+class LLMProviderFactory:
+    def __init__(self, config: dict):
+        self.config = config
+
+    def create(self, provider: str):
+        if provider == LLMEnum.OPENAI.value:
+            return AzureOpenAIProvider(
+                api_key=self.config.AZURE_OPENAI_API_KEY,
+                api_base=self.config.AZURE_OPENAI_ENDPOINT,
+                api_version=self.config.AZURE_OPENAI_API_VERSION,
+                default_input_max_chars=self.config.DEFAULT_INPUT_MAX_CHARS,
+                default_generation_max_output_tokens=self.config.DEFAULT_GENERATION_MAX_OUTPUT_TOKENS,
+                default_generation_temperature=self.config.DEFAULT_GENERATION_TEMPERATURE,
+            )
+
+        elif provider == LLMEnum.COHERE.value:
+            return CohereProvider(
+                api_key=self.config.COHERE_API_KEY,
+                default_input_max_chars=self.config.DEFAULT_INPUT_MAX_CHARS,
+                default_generation_max_output_tokens=self.config.DEFAULT_GENERATION_MAX_OUTPUT_TOKENS,
+                default_generation_temperature=self.config.DEFAULT_GENERATION_TEMPERATURE,
+            )
+
+        return None
