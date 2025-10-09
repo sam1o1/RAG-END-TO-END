@@ -3,6 +3,7 @@ from tkinter import N
 
 from attr import dataclass
 from bson import ObjectId
+from numpy import record
 from .BaseDataModel import BaseDataModel
 from .db_schemas.data_chunk import DataChunk
 from .enums.DataBaseEnum import DataBaseEnum
@@ -14,6 +15,7 @@ class ChunkDataModel(BaseDataModel):
         super().__init__(db_client)
         self.db = self.db_client[self.app_settings.MONGO_DB_NAME]
         self.collection = self.db[DataBaseEnum.Collection_CHUNK_NAME.value]
+
     @classmethod
     async def create_instance(cls, db_client: object):
         instance = cls(db_client)
@@ -60,3 +62,15 @@ class ChunkDataModel(BaseDataModel):
     async def delete_chunks_by_project_id(self, project_id: ObjectId) -> int:
         result = await self.collection.delete_many({"chunk_project_id": project_id})
         return result.deleted_count
+
+    async def get_project_chunks(
+        self, project_id: ObjectId, page_no: int = 1, page_size: int = 50
+    ):
+        results = (
+            await self.collection.find({"chunk_project_id": project_id})
+            .skip((page_no - 1) * page_size)
+            .limit(page_size)
+            .to_list(length=None)
+        )
+
+        return [DataChunk(**record) for record in results]

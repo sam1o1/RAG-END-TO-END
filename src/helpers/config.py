@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     AZURE_OPENAI_DEPLOYMENT_GPT4O: str = None
     AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS: str = None
     AZURE_OPENAI_DEPLOYMENT_GPT4O_MINI: str = None
-    CHHERE_API_KEY: str = None
+    COHERE_API_KEY: str = None
 
     GENERATION_MOELL_ID: str = None
     EMBEDDING_MODEL_ID: str = None

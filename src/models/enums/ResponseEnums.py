@@ -11,3 +11,6 @@ class ResponseSignal(Enum):
     PROCESSING_FAILURE = "File processing failed."
     PROCESSING_SUCCESS = "File processed successfully."
     FILES_NOT_FOUND = "No files found."
+    PROJECT_NOT_FOUND = "Project Not Found"
+    INSERT_INTO_DB_ERROR = " insert error into db"
+    INSERT_INTO_DB_SUCCESS = " insert success into db"

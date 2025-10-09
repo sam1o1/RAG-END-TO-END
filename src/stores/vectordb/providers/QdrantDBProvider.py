@@ -99,6 +99,7 @@ class QdrantDBProvider(VectorDBInterface):
             collection_name=collection_name,
             records=[
                 models.Record(
+                    id=[record_id],
                     vector=vector,
                     payload={"text": text, "metadata": metadata},
                 )
@@ -118,7 +119,7 @@ class QdrantDBProvider(VectorDBInterface):
         if metadata is None:
             metadata = [None] * len(texts)
         if record_ids is None:
-            record_ids = [None] * len(texts)
+            record_ids = list(range(0, len(texts)))
         if not self.is_collection_exists(collection_name):
             self.logger.error(f"Collection {collection_name} does not exist.")
             return False
@@ -128,8 +129,10 @@ class QdrantDBProvider(VectorDBInterface):
             batch_texts = texts[i:batch_end]
             batch_vectors = vectors[i:batch_end]
             batch_metadata = metadata[i:batch_end]
+            batch_record_ids = record_ids[i:batch_end]
             batch_records = [
                 models.Record(
+                    id=batch_record_ids[j],
                     vector=batch_vectors[j],
                     payload={"text": batch_texts[j], "metadata": batch_metadata[j]},
                 )

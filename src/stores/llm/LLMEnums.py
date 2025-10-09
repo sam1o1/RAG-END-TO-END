@@ -3,7 +3,7 @@ from enum import Enum
 
 class LLMEnum(Enum):
 
-    OPENAI = "OPENAI"
+    OPENAI = "AZURE_OPENAI"
     COHERE = "COHERE"
 
 
