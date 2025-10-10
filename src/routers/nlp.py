@@ -39,6 +39,7 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
         vector_db_client=request.app.vector_db_client,
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
+        template_parser=request.app.template_parser,
     )
 
     has_records = True
@@ -90,6 +91,7 @@ async def get_project_index_info(request: Request, project_id: str):
         vector_db_client=request.app.vector_db_client,
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
+        template_parser=request.app.template_parser,
     )
     collection_info = nlp_controller.vector_db_collection_info(project=project)
     return JSONResponse(
@@ -144,6 +146,7 @@ async def answer_rag(request: Request, project_id: str, search_request: SearcReq
         vector_db_client=request.app.vector_db_client,
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
+        template_parser=request.app.template_parser,
         template_parser=request.app.template_parser,
     )
     answer, full_prompt, chat_history = nlp_controller.answer_rag_questions(
