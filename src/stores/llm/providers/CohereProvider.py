@@ -20,6 +20,7 @@ class CohereProvider(LLMInterface):
         self.default_generation_temperature = default_generation_temperature
         self.embedding_size = None
         self.client = cohere.Client(self.api_key)
+        self.enums = CoHereEnum
         self.logger = logging.getLogger(__name__)
 
     def set_generation_model(self, model_id: str):

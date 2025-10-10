@@ -3,6 +3,7 @@ from ..VectorDBInterface import VectorDBInterface
 from ..VectorDBEnums import DistanceMethodEnums
 import logging
 from qdrant_client import QdrantClient, models
+from models.db_schemas import ReterievedDocument
 
 
 class QdrantDBProvider(VectorDBInterface):
@@ -164,16 +165,25 @@ class QdrantDBProvider(VectorDBInterface):
                 query_vector=vector,
                 limit=limit,
             )
-            formatted_results = [
-                {
-                    "id": res.id,
-                    "score": res.score,
-                    "text": res.payload.get("text", ""),
-                    "metadata": res.payload.get("metadata", {}),
-                }
-                for res in results
+            if not results or len(results) == 0:
+                return None
+            return [
+                ReterievedDocument(
+                    **{"score": result.score, "text": result.payload["text"]}
+                )
+                for result in results
             ]
-            return formatted_results
+
+            # formatted_results = [
+            #     {
+            #         "id": res.id,
+            #         "score": res.score,
+            #         "text": res.payload.get("text", ""),
+            #         "metadata": res.payload.get("metadata", {}),
+            #     }
+            #     for res in results
+            # ]
+            # return formatted_results
         except Exception as e:
             self.logger.error(f"Error searching by vector: {e}")
             return []

@@ -29,6 +29,7 @@ class AzureOpenAIProvider(LLMInterface):
             api_version=self.api_version,
             azure_deployment=self.generation_model_id,
         )
+        self.enums = AzureOpenAIEnum
         self.logger = logging.getLogger(__name__)
 
     def set_generation_model(self, model_id: str):
