@@ -40,3 +40,5 @@ src/routers/__pycache__/__init__.cpython-312.pyc
 src/assets/files/
 mongodb/
 .gitignore
+src/models/db_schemas/rag/alembic.ini.example
+src/models/db_schemas/rag/alembic.ini

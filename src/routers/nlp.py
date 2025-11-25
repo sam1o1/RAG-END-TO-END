@@ -23,12 +23,12 @@ nlp_router = APIRouter(
 
 
 @nlp_router.post("/index/push/{project_id}")
-async def index_project(request: Request, project_id: str, push_request: PushRequest):
+async def index_project(request: Request, project_id: int, push_request: PushRequest):
     project_data_model = await ProjectDataModel.create_instance(
-        db_client=request.app.mongo_conn
+        db_client=request.app.db_client
     )
     project = await project_data_model.get_project_or_create_one(project_id=project_id)
-    chunk_model = await ChunkDataModel.create_instance(db_client=request.app.mongo_conn)
+    chunk_model = await ChunkDataModel.create_instance(db_client=request.app.db_client)
 
     if not project:
         JSONResponse(
@@ -49,7 +49,7 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
     while has_records:
 
         page_chunks = await chunk_model.get_project_chunks(
-            project_id=project.id, page_no=page_no
+            project_id=project.project_id, page_no=page_no
         )
         if len(page_chunks):
             page_no += 1
@@ -82,9 +82,9 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
 
 
 @nlp_router.get("/index/info/{project_id}")
-async def get_project_index_info(request: Request, project_id: str):
+async def get_project_index_info(request: Request, project_id: int):
     project_data_model = await ProjectDataModel.create_instance(
-        db_client=request.app.mongo_conn
+        db_client=request.app.db_client
     )
     project = await project_data_model.get_project_or_create_one(project_id=project_id)
     nlp_controller = NLPController(
@@ -104,9 +104,9 @@ async def get_project_index_info(request: Request, project_id: str):
 
 
 @nlp_router.get("/index/search/{project_id}")
-async def search_index(request: Request, project_id: str, search_request: SearcRequest):
+async def search_index(request: Request, project_id: int, search_request: SearcRequest):
     project_data_model = await ProjectDataModel.create_instance(
-        db_client=request.app.mongo_conn
+        db_client=request.app.db_client
     )
     project = await project_data_model.get_project_or_create_one(project_id=project_id)
     nlp_controller = NLPController(
@@ -137,16 +137,15 @@ async def search_index(request: Request, project_id: str, search_request: SearcR
 
 
 @nlp_router.get("/index/answer/{project_id}")
-async def answer_rag(request: Request, project_id: str, search_request: SearcRequest):
+async def answer_rag(request: Request, project_id: int, search_request: SearcRequest):
     project_data_model = await ProjectDataModel.create_instance(
-        db_client=request.app.mongo_conn
+        db_client=request.app.db_client
     )
     project = await project_data_model.get_project_or_create_one(project_id=project_id)
     nlp_controller = NLPController(
         vector_db_client=request.app.vector_db_client,
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
-        template_parser=request.app.template_parser,
         template_parser=request.app.template_parser,
     )
     answer, full_prompt, chat_history = nlp_controller.answer_rag_questions(

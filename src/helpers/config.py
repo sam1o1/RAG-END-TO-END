@@ -1,3 +1,4 @@
+from pickle import NONE
 from tkinter import N
 from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,6 +19,11 @@ class Settings(BaseSettings):
     MONGO_DB_NAME: str
     MONGO_INITDB_ROOT_USERNAME: str  # Add this field
     MONGO_INITDB_ROOT_PASSWORD: str  # Add this field
+    POSTGRES_USERNAME: str = None
+    POSTGRES_PASSWORD: str
+    POSTGRES_MAIN_DB: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
     GENERATION_BACKEND: str
     EMBEDDING_BACKEND: str
     AZURE_OPENAI_ENDPOINT: str = None
