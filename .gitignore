@@ -2,7 +2,9 @@
 venv/
 env/
 .venv/
-
+.env/
+.env*
+!env/.env.*.example
 # Compiled files
 **/__pycache__/
 *__pycache__/
@@ -42,3 +44,4 @@ mongodb/
 .gitignore
 src/models/db_schemas/rag/alembic.ini.example
 src/models/db_schemas/rag/alembic.ini
+docker/rag/alembic.ini
