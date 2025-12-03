@@ -1,31 +1,148 @@
 services:
-  mongodb:
-    image: mongo:7-jammy
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+  #fastapi 
+  fastapi:
+    build:
+      context: ..
+      dockerfile: docker/rag/Dockerfile
+    container_name: fastapi 
     networks:
       - backend
     restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - fastapi_data:/app/assets/files
+    env_file:
+      - ./env/.env.app
+    depends_on:
+      - pgvector
+      - Qadrant
+
+  # nginx 
+  nginx:
+    image: nginx:stable-alpine3.20-perl
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - backend
+    restart: always
+    depends_on:
+      - fastapi
+
+  #pgvector db
   pgvector:
     image: pgvector/pgvector:0.8.0-pg17
     container_name: pgvector
     ports:
       - "5432:5432"
     volumes:
-      - pgvector_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - pgvector:/var/lib/postgresql/data
+    env_file:
+      - ./env/.env.postgres
     networks:
       - backend
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s 
+
+
+
+  #Qadrant db 
+  Qadrant:
+    image: qdrant/qdrant:v1.13.6
+    container_name: qadrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - backend
+    restart: always
+
+
+  #promethus 
+  prometheus:
+    image: prom/prometheus:v3.3.0
+    container_name: prometheus
+    ports:
+      - "9090:9090" 
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml 
+    networks:
+      - backend
+    restart: always
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+  #grafana 
+  grafana:
+    image: grafana/grafana:11.6.0-ubuntu
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    env_file:
+      - ./env/.env.grafana
+    depends_on: 
+      - prometheus
+    networks:
+      - backend
+    restart: always
+
+
+
+  #node exporter for system metrics 
+  node_exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: node_exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - backend
+    restart: always
+
+
+  #postgres exporter for postgres metrics 
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:v0.17.1
+    container_name: postgres_exporter
+    ports:
+      - "9187:9187"
+    env_file:
+      - ./env/.env.postgres-exporter
+    depends_on: 
+      - pgvector
+    networks:
+      - backend
+    restart: always
+
+
 networks:
   backend:
+    driver: bridge
+
 volumes:
-  mongodb:
-  pgvector_data:
+  fastapi_data:
+  pgvector:
+  qdrant_storage:
+  prometheus_data:
+  grafana_data:
+
