@@ -21,7 +21,7 @@ class QdrantDBProvider(VectorDBInterface):
 
     def connect(self):
         try:
-            self.client = QdrantClient(path=self.db_path)
+            self.client = QdrantClient(url=self.db_path)
             return True
         except Exception as e:
             self.logger.error(f"Error connecting to QdrantDB: {e}")

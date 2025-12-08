@@ -39,7 +39,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    app.db_engine.dispose()
+    await app.db_engine.dispose()
     app.vector_db_client.disconnect()
 
 

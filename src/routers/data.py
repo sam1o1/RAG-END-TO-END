@@ -15,6 +15,7 @@ from models.db_schemas import Asset
 from models.PorjectDataModel import ProjectDataModel
 from models.AssetsDataModel import AssetsDataModel
 from models.ChunkDataModel import ChunkDataModel
+from tasks.file_processing import process_project_files
 
 logging.getLogger("uvicorn.error")
 logger = logging.getLogger(__name__)
@@ -93,89 +94,14 @@ async def process_file(
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
     do_reset = process_request.do_reset
-    chunk_model = await ChunkDataModel.create_instance(db_client=request.app.db_client)
-    project_model = await ProjectDataModel.create_instance(
-        db_client=request.app.db_client
+    task = process_project_files.delay(
+        project_id, process_request.file_id, chunk_size, overlap_size, do_reset
     )
-    project = await project_model.get_project_or_create_one(project_id=project_id)
-    asset_model = await AssetsDataModel.create_instance(db_client=request.app.db_client)
-
-    projects_files_ids = {}
-    if process_request.file_id:
-        asset_record = await asset_model.get_asset_by_id(
-            asset_project_id=project.project_id, asset_name=process_request.file_id
-        )
-        if asset_record is None:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "status": status.HTTP_400_BAD_REQUEST,
-                    "message": ResponseSignal.FILES_NOT_FOUND.value,
-                },
-            )
-        projects_files_ids = {asset_record.asset_id: str(asset_record.asset_name)}
-
-    else:
-        project_assets = await asset_model.get_all_project_assets(
-            asset_project_id=project.project_id, asset_type="application/pdf"
-        )
-        projects_files_ids = {
-            asset.asset_id: str(asset.asset_name) for asset in project_assets
-        }
-    if len(projects_files_ids) == 0:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "status": status.HTTP_400_BAD_REQUEST,
-                "message": ResponseSignal.FILES_NOT_FOUND.value,
-            },
-        )
-    process_controller = ProcessController(project_id=project_id)
-    inserted_count = 0
-    no_files = 0
-    if do_reset == 1:
-        _ = await chunk_model.delete_chunks_by_project_id(project.project_id)
-    for _id, file_id in projects_files_ids.items():
-        file_content = process_controller.get_file_content(file_id=file_id)
-        if file_content is None or len(file_content) == 0:
-            logger.error(f"Error processing file: {file_id}")
-
-        file_chunks = process_controller.process_file_content(
-            file_content=file_content,
-            file_id=file_id,
-            chunk_size=chunk_size,
-            overlap_size=overlap_size,
-        )
-        if file_chunks is None or len(file_chunks) == 0:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "status": status.HTTP_400_BAD_REQUEST,
-                    "message": ResponseSignal.PROCESSING_FAILURE.value,
-                },
-            )
-        file_chunks_records = [
-            DataChunk(
-                chunk_text=chunk.page_content,
-                chunk_metadata=chunk.metadata,
-                chunk_order=i + 1,
-                chunk_project_id=project.project_id,
-                chunk_asset_id=_id,
-            )
-            for i, chunk in enumerate(file_chunks)
-        ]
-
-        inserted_count += await chunk_model.insert_many_chunks(
-            chunks=file_chunks_records
-        )
-        no_files += 1
-
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
             "status": status.HTTP_200_OK,
-            "message": ResponseSignal.PROCESSING_SUCCESS.value,
-            "total_chunks": inserted_count,
-            "total_files": no_files,
+            "message": "Successfully started processing files",
+            "task_id": task.id,
         },
     )
